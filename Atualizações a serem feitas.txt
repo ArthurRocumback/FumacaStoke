@@ -1,0 +1,7 @@
+Remover nav bar e fazer um user icon com dropdown com as informações
+
+Pedido pronto - permissão somente para o ADM poder voltar para não - Identificação de pedido editado (mudar para
+outra cor quando o campo for alterado) - 
+
+
+Remover o input de buscar e fazer ele no mesmo campo de enviar pedidos criando um novo botão de pesquisar
