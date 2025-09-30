@@ -2,7 +2,7 @@ import sqlite3
 import os
 from werkzeug.security import generate_password_hash
 
-senha_admin = generate_password_hash('Admin')
+senha_admin = generate_password_hash('admin123')
 senha_user = generate_password_hash('Teste')
 
 sql_recreate_db = """
@@ -68,7 +68,7 @@ with sqlite3.connect(db_path) as conn:
 
     cursor.executescript(sql_recreate_db)
     cursor.execute("INSERT INTO user (nome, senha, admin) VALUES (?, ?, ?), (?, ?, ?)",
-                   ('ADM', senha_admin, 1, 'Teste', senha_user, 0))
+                   ('adm', senha_admin, 1, 'Teste', senha_user, 0))
     conn.commit()
     print("Database criado e populado com sucesso!")
 
