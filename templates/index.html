@@ -11,58 +11,6 @@
         <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.4/css/all.min.css"> 
         
         <style>
-            /* Switch de pedido pronto */
-            .switch-toggle {
-                position: relative;
-                width: 60px;
-                height: 30px;
-            }
-
-            .switch-toggle input {
-                opacity: 0;
-                width: 0;
-                height: 0;
-            }
-
-            .slider-toggle {
-                position: absolute;
-                cursor: pointer;
-                inset: 0;
-                background-color: #b8a8a8;
-                border-radius: 30px;
-                transition: background-color 0.4s ease;
-            }
-
-            .slider-toggle::before {
-                content: "Não";
-                position: absolute;
-                height: 26px;
-                width: 26px;
-                left: 2px;
-                bottom: 2px;
-                background-color: #102c6b;
-                color: #fff;
-                font-size: 12px;
-                font-weight: 500;
-                font-family: 'Segoe UI', sans-serif;
-                display: flex;
-                align-items: center;
-                justify-content: center;
-                border-radius: 50%;
-                transition: transform 0.4s ease, content 0.4s ease;
-            }
-
-            .switch-toggle input:checked + .slider-toggle {
-                background-color: #60e672;
-            }
-
-            .switch-toggle input:checked + .slider-toggle::before {
-                transform: translateX(30px);
-                content: "Sim";
-                background-color: #0d8327; /* Cor do Sim para contraste */
-            }
-
-            /* Estilos gerais */
             input[type="number"]::-webkit-outer-spin-button,
             input[type="number"]::-webkit-inner-spin-button {
                 -webkit-appearance: none;
@@ -244,20 +192,16 @@
     <script src="https://cdn.jsdelivr.net/npm/@popperjs/core@2.5.2/dist/umd/popper.min.js"></script>
     <script src="https://stackpath.bootstrapcdn.com/bootstrap/4.5.2/js/bootstrap.min.js"></script>
     <script>
-        // =========================================================
-        // FUNÇÃO DE MENSAGEM VAZIA (NOVA)
-        // =========================================================
+
         function renderEmptyTableMessage(tbody, message) {
-            // Conta quantas colunas existem no cabeçalho (thead) para que o colspan funcione
+
             const colunas = document.querySelectorAll('#tabelaPedidos thead th').length;
-            
-            // Retorna se não houver colunas (erro na tabela)
+
             if (colunas === 0) return; 
 
             const tr = document.createElement('tr');
             const td = document.createElement('td');
-            
-            // Configuração formal da mensagem
+
             td.setAttribute('colspan', colunas);
             td.classList.add('text-center', 'py-4', 'text-muted', 'lead', 'font-italic');
             td.innerHTML = `<i class="fas fa-info-circle mr-2"></i> ${message}`;
@@ -305,10 +249,10 @@
                 pedidosArmazenados = pedidos;
                 paginaAtual = 1;
                 exibirPagina(paginaAtual);
-                // Resumo(); // Comentei ou remova se não for mais usada
+
             } catch (error) {
                 console.error('Erro ao carregar pedidos:', error);
-                // Exibir mensagem de erro de API se falhar
+
                 const tbody = document.querySelector('#tabelaPedidos tbody');
                 tbody.innerHTML = '';
                 renderEmptyTableMessage(tbody, 'Erro ao comunicar com a API. Por favor, tente novamente.');
@@ -321,7 +265,7 @@
         }
 
         document.getElementById('btnEnviar').addEventListener('click', async function () {
-            // Preencher os dados
+
             const nome = document.querySelector('[name="Nome_1"]').value;
             const rg = document.querySelector('[name="RG_1"]').value;
             const produto = document.querySelector('[name="produto_1"]').value;
@@ -368,10 +312,12 @@
                 <button class="btn btn-info btn-sm ml" onclick='preencherFormulario(${JSON.stringify(pedido)})'>Reutilizar</button>
                 </td>
                 <td>
-                <label class="switch-toggle d-inline-block">
-                <input type="checkbox" ${switchChecked} onchange="onToggleChange(this, ${pedido.pedidoid})">
-                <span class="slider-toggle"></span>
-                </label>
+                <div class="d-flex justify-content-center align-items-center" style="height: 100%;">
+                    <input type="checkbox" 
+                        style="width: 20px; height: 20px;" 
+                        ${switchChecked} 
+                        onchange="onToggleChange(this, ${pedido.pedidoid})">
+                    </div>
             </td>
             `;
             tbody.appendChild(tr);
@@ -663,7 +609,6 @@
                 return texto.includes(termo);
             });
 
-            // NOVO: Lógica para exibir a mensagem se o filtro não encontrar resultados
             if (resultadosFiltrados.length === 0) {
                 renderEmptyTableMessage(tbody, 'Nenhum pedido encontrado com base no filtro atual.');
                 document.getElementById('paginacao').style.display = 'none';

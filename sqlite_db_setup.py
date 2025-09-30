@@ -55,35 +55,35 @@ sql_recreate_db = """
 db_path = 'db/pedidos_db.db'
 
 # Recria o Banco de dados
-if os.path.exists(db_path):
-    print(f"Database {db_path} já existe. Removendo para recriar...")
-    os.remove(db_path)
-else:
-    print(f"Criando database {db_path}...")
-
-os.makedirs(os.path.dirname(db_path), exist_ok=True)
-
-with sqlite3.connect(db_path) as conn:
-    cursor = conn.cursor()
-
-    cursor.executescript(sql_recreate_db)
-    cursor.execute("INSERT INTO user (nome, senha, admin) VALUES (?, ?, ?), (?, ?, ?)",
-                   ('adm', senha_admin, 1, 'Teste', senha_user, 0))
-    conn.commit()
-    print("Database criado e populado com sucesso!")
-
-#     Não recria o banco de dados se ele já existir
-# if not os.path.exists(db_path):
+# if os.path.exists(db_path):
+#     print(f"Database {db_path} já existe. Removendo para recriar...")
+#     os.remove(db_path)
+# else:
 #     print(f"Criando database {db_path}...")
 
-#     os.makedirs(os.path.dirname(db_path), exist_ok=True)
+# os.makedirs(os.path.dirname(db_path), exist_ok=True)
 
-#     with sqlite3.connect(db_path) as conn:
-#         cursor = conn.cursor()
-#         cursor.executescript(sql_recreate_db)
-#         cursor.execute("INSERT INTO user (nome, senha, admin) VALUES (?, ?, ?), (?, ?, ?)",
-#                    ('ADM', senha_admin, 1, 'Teste', senha_user, 0))
-#         conn.commit()
-#         print("Database criado e populado com sucesso!")
-# else:
-#     print(f"Database {db_path} já existe. Nenhuma ação necessária.")
+# with sqlite3.connect(db_path) as conn:
+#     cursor = conn.cursor()
+
+#     cursor.executescript(sql_recreate_db)
+#     cursor.execute("INSERT INTO user (nome, senha, admin) VALUES (?, ?, ?), (?, ?, ?)",
+#                    ('adm', senha_admin, 1, 'Teste', senha_user, 0))
+#     conn.commit()
+#     print("Database criado e populado com sucesso!")
+
+#     Não recria o banco de dados se ele já existir
+if not os.path.exists(db_path):
+    print(f"Criando database {db_path}...")
+
+    os.makedirs(os.path.dirname(db_path), exist_ok=True)
+
+    with sqlite3.connect(db_path) as conn:
+        cursor = conn.cursor()
+        cursor.executescript(sql_recreate_db)
+        cursor.execute("INSERT INTO user (nome, senha, admin) VALUES (?, ?, ?), (?, ?, ?)",
+                   ('adm', senha_admin, 1, 'Teste', senha_user, 0))
+        conn.commit()
+        print("Database criado e populado com sucesso!")
+else:
+    print(f"Database {db_path} já existe. Nenhuma ação necessária.")
