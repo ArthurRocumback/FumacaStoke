@@ -1,12 +1,16 @@
 # tests/conftest.py
+import os
+import sys
 import pytest
 import sqlite3
 from werkzeug.security import generate_password_hash
 
-# O pytest.ini vai cuidar para que esta importação funcione
-from app import app as flask_app
+# Garante que o diretório raiz está no path (para importar app.py)
+sys.path.append(os.path.dirname(os.path.dirname(__file__)))
 
-# --- Schema do BD (Inferido do seu app.py e sqlite_db_setup.py) ---
+from app import app as flask_app  # importa o objeto Flask (será usado no yield)
+
+# --- Schema do BD (baseado no app.py) ---
 SCHEMA_SQL = """
 CREATE TABLE IF NOT EXISTS user (
     id INTEGER PRIMARY KEY AUTOINCREMENT,
@@ -36,39 +40,32 @@ CREATE TABLE IF NOT EXISTS pedido (
 );
 """
 
-@pytest.fixture(scope='session')
+@pytest.fixture(scope='function')
 def app(monkeypatch):
-    """
-    Fixture de sessão que configura o app Flask e um BD em memória.
-    """
-    
-    # 1. Usar um banco de dados em memória "nomeado" (URI) para que 
-    # ele persista durante toda a sessão de teste (entre conexões).
+    """Configura o app Flask e um BD SQLite em memória para os testes."""
+
+    import app as app_module  # importa o módulo (não o objeto Flask)
     TEST_DB_URI = 'file:memory?mode=memory&cache=shared'
-    
-    # 2. Criar a conexão e o schema inicial
+
+    # Cria o schema no banco em memória
     conn = sqlite3.connect(TEST_DB_URI, uri=True)
     conn.executescript(SCHEMA_SQL)
     conn.close()
 
-    # 3. Monkeypatch!
-    # Substituímos o DB_PATH no módulo 'app' para apontar para o BD em memória
-    monkeypatch.setattr(flask_app, "DB_PATH", TEST_DB_URI)
-    
-    # 4. Sobrescrever a função de conexão para usar o URI
-    # Isso é crucial para que todas as chamadas à db_connection()
-    # no app usem nosso banco em memória.
+    # Monkeypatch: substitui DB_PATH e db_connection no módulo app
+    monkeypatch.setattr(app_module, "DB_PATH", TEST_DB_URI)
+
     def mock_db_connection():
         db_conn = sqlite3.connect(TEST_DB_URI, uri=True)
         db_conn.row_factory = sqlite3.Row
         return db_conn
-        
-    monkeypatch.setattr(flask_app, "db_connection", mock_db_connection)
 
-    # 5. Configurar app para teste
+    monkeypatch.setattr(app_module, "db_connection", mock_db_connection)
+
+    flask_app = app_module.app
     flask_app.config.update({
         "TESTING": True,
-        "SECRET_KEY": "test-secret-key" # Chave para testar sessões
+        "SECRET_KEY": "test-secret-key"
     })
 
     yield flask_app
@@ -76,22 +73,16 @@ def app(monkeypatch):
 
 @pytest.fixture(scope='function')
 def client(app):
-    """ Cliente de teste para cada função. """
+    """Cliente de teste Flask."""
     return app.test_client()
 
 
 @pytest.fixture(scope='function')
 def db_conn(app):
-    """
-    Fixture que fornece uma conexão ao BD de teste
-    e limpa as tabelas APÓS cada teste para garantir isolamento.
-    """
-    from app import db_connection # Pega a função "monkeypatched"
-    
-    conn = db_connection()
+    """Conexão direta ao banco para verificação."""
+    import app as app_module
+    conn = app_module.db_connection()
     yield conn
-    
-    # --- Limpeza (Teardown pós-teste) ---
     conn.execute("DELETE FROM pedido;")
     conn.execute("DELETE FROM user;")
     conn.execute("DELETE FROM produto;")
@@ -99,29 +90,18 @@ def db_conn(app):
     conn.commit()
     conn.close()
 
+
 @pytest.fixture(scope='function')
 def seed_data(db_conn):
-    """
-    Fixture para popular o banco com dados básicos para testes.
-    Roda por função, garantindo dados limpos.
-    """
-    try:
-        # Criar um usuário admin e um normal
-        db_conn.execute(
-            "INSERT INTO user (nome, senha, admin) VALUES (?, ?, ?)",
-            ('admin', generate_password_hash('admin123'), 1)
-        )
-        db_conn.execute(
-            "INSERT INTO user (nome, senha, admin) VALUES (?, ?, ?)",
-            ('user', generate_password_hash('user123'), 0)
-        )
-        
-        # Criar produtos e roshs
-        db_conn.execute("INSERT INTO produto (nome) VALUES (?)", ('Narguile Grande',))
-        db_conn.execute("INSERT INTO rosh (nome) VALUES (?)", ('Rosh de Barro',))
-        
-        db_conn.commit()
-    except sqlite3.Error as e:
-        print(f"Erro ao popular dados: {e}")
-        db_conn.rollback()
-        raise
+    """Popula o BD com dados básicos."""
+    db_conn.execute(
+        "INSERT INTO user (nome, senha, admin) VALUES (?, ?, ?)",
+        ('admin', generate_password_hash('admin123'), 1)
+    )
+    db_conn.execute(
+        "INSERT INTO user (nome, senha, admin) VALUES (?, ?, ?)",
+        ('user', generate_password_hash('user123'), 0)
+    )
+    db_conn.execute("INSERT INTO produto (nome) VALUES (?)", ('Narguile Grande',))
+    db_conn.execute("INSERT INTO rosh (nome) VALUES (?)", ('Rosh de Barro',))
+    db_conn.commit()
