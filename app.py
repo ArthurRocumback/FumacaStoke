@@ -2,13 +2,10 @@ from flask import Flask, render_template, request, jsonify, redirect, url_for, s
 import sqlite3
 from datetime import datetime, timedelta
 from werkzeug.security import check_password_hash
-# from dotenv import load_dotenv
 
 app = Flask(__name__)
 
 DB_PATH = 'db/pedidos_db.db'
-
-# load_dotenv()
 
 app.secret_key = 'chave-muito-secreta-uuuuuuuuuuuuuuuuhh' # Colocar em um .env para não expor no código
 
