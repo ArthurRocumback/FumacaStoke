@@ -1,8 +1,5 @@
 import json
 
-
-# ---------- Helpers ----------
-
 def login(client, usuario, senha, follow_redirects=False):
     return client.post(
         "/login",
@@ -10,9 +7,7 @@ def login(client, usuario, senha, follow_redirects=False):
         follow_redirects=follow_redirects,
     )
 
-
-# ---------- Testes de LOGIN ----------
-
+# Testes de LOGIN 
 def test_login_page_carrega(client):
     res = client.get("/login")
     assert res.status_code == 200
@@ -32,7 +27,6 @@ def test_login_admin_sucesso_redireciona_e_sessao_admin_true(client):
         assert sess["usuario"] == "adm"
         assert sess["admin"] is True
 
-
 def test_login_usuario_normal_sucesso_nao_admin(client):
     res = login(client, "Teste", "Teste", follow_redirects=False)
     assert res.status_code == 302
@@ -40,7 +34,6 @@ def test_login_usuario_normal_sucesso_nao_admin(client):
     with client.session_transaction() as sess:
         assert sess["usuario"] == "Teste"
         assert sess["admin"] is False
-
 
 def test_login_invalido_redireciona_para_login_e_nao_seta_sessao(client):
     res = login(client, "naoexiste", "errada", follow_redirects=False)
@@ -51,9 +44,7 @@ def test_login_invalido_redireciona_para_login_e_nao_seta_sessao(client):
         assert "usuario" not in sess
         assert "admin" not in sess
 
-
-# ---------- Proteção de ROTAS ----------
-
+# Proteção de ROTAS 
 def test_index_redireciona_para_login_quando_nao_logado(client):
     res = client.get("/", follow_redirects=False)
     assert res.status_code == 302
@@ -99,22 +90,18 @@ def test_logout_limpa_sessao_e_redireciona_para_login(client):
         assert "usuario" not in sess
         assert "admin" not in sess
 
-
-# ---------- Testes de API / banco ----------
-
+# Testes de API / banco 
 def test_listar_produtos(client):
     res = client.get("/api/produtos")
     data = res.get_json()
     assert res.status_code == 200
     assert "Aluguel Pequeno" in data
 
-
 def test_listar_roshs(client):
     res = client.get("/api/roshs")
     data = res.get_json()
     assert res.status_code == 200
     assert "Mix" in data
-
 
 def test_criar_pedido(client):
     pedido = {
@@ -135,12 +122,10 @@ def test_criar_pedido(client):
     assert res.status_code == 201
     assert res.get_json()["message"] == "Pedido criado com sucesso!"
 
-
 def test_listar_pedidos(client):
     res = client.get("/api/pedidos/todos")
     assert res.status_code == 200
     assert isinstance(res.get_json(), list)
-
 
 def test_atualizar_status_pedido_ativo(client):
     # cria um pedido
@@ -167,7 +152,6 @@ def test_atualizar_status_pedido_ativo(client):
     assert res.status_code == 200
     assert res.get_json()["message"] == "Status atualizado com sucesso"
 
-
 def test_deletar_pedido(client):
     # cria um pedido
     client.post(
@@ -188,8 +172,7 @@ def test_deletar_pedido(client):
     assert res.status_code == 200
     assert res.get_json()["message"] == "Pedido excluído com sucesso"
 
-# ---------- Rotas extras e ramos não cobertos ----------
-
+#  Rotas extras e ramos não cobertos
 def test_index_page_route(client):
     # loga como usuário comum
     login(client, "Teste", "Teste")
