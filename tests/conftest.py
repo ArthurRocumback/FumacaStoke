@@ -5,13 +5,15 @@ import pytest
 import sqlite3
 from werkzeug.security import generate_password_hash
 
+# Descobre o diretório raiz do projeto (um nível acima da pasta tests)
 PROJECT_ROOT = os.path.dirname(os.path.dirname(__file__))
 
+# Garante que o raiz esteja no sys.path para que 'import app' funcione
 if PROJECT_ROOT not in sys.path:
     sys.path.insert(0, PROJECT_ROOT)
 
-import app as app_module
-from app import app as flask_app 
+import app as app_module           # módulo completo
+from app import app as flask_app   # instância Flask
 
 
 @pytest.fixture
