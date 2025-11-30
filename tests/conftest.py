@@ -5,31 +5,49 @@ import pytest
 import sqlite3
 from werkzeug.security import generate_password_hash
 
-# Descobre o diretório raiz do projeto (um nível acima da pasta tests)
+# Descobre o diretório raiz do projeto (pasta um nível acima de "tests")
+# Ex: .../FumaçaStoke/tests  -> PROJECT_ROOT = .../FumaçaStoke
 PROJECT_ROOT = os.path.dirname(os.path.dirname(__file__))
 
-# Garante que o raiz esteja no sys.path para que 'import app' funcione
+# Garante que o diretório raiz do projeto esteja no sys.path
+# para que possamos fazer "import app" normalmente.
 if PROJECT_ROOT not in sys.path:
     sys.path.insert(0, PROJECT_ROOT)
 
-import app as app_module           # módulo completo
-from app import app as flask_app   # instância Flask
+# Importa o módulo completo "app" (para acessar DB_PATH, etc.)
+import app as app_module
+# Importa somente a instância Flask chamada "app" de dentro do módulo
+from app import app as flask_app
 
 
 @pytest.fixture
 def app():
-    # Cria um banco SQLite temporário
-    temp_db = tempfile.NamedTemporaryFile(suffix=".db", delete=False)
-    temp_db.close()
+    """
+    Fixture principal do pytest que configura uma instância do app Flask
+    apontando para um BANCO DE DADOS TEMPORÁRIO (isolado para testes).
 
-    # Aponta o app para o banco temporário
+    Ela:
+    - Cria um arquivo .db temporário
+    - Ajusta o DB_PATH do app para usar esse arquivo
+    - Cria as tabelas necessárias (produto, rosh, pedido, user)
+    - Popula dados mínimos de teste (1 produto, 1 rosh, admin e user)
+    - Entrega o app configurado para os testes
+    - Remove o banco temporário no final
+    """
+
+    # Cria um arquivo de banco SQLite temporário
+    temp_db = tempfile.NamedTemporaryFile(suffix=".db", delete=False)
+    temp_db.close()  # fecha o handle, mas mantém o arquivo no disco
+
+    # Faz o app usar esse banco de dados temporário
     app_module.DB_PATH = temp_db.name
-    flask_app.config["TESTING"] = True
+    flask_app.config["TESTING"] = True  # ativa modo de teste no Flask
 
     conn = sqlite3.connect(temp_db.name)
     cursor = conn.cursor()
 
-    # Estrutura mínima das tabelas (baseado no sqlite_db_setup.py)
+    # Cria a estrutura mínima de tabelas necessária para os testes.
+    # Isso é baseado no sqlite_db_setup.py, mas simplificado para o ambiente de teste.
     cursor.executescript(
         """
         CREATE TABLE produto (
@@ -64,18 +82,25 @@ def app():
         """
     )
 
-    # Dados básicos para os testes
+    # Insere dados básicos necessários para o funcionamento do sistema nos testes
+
+    # 1 produto padrão para os testes de listagem e criação de pedidos
     cursor.execute("INSERT INTO produto (nome) VALUES (?)", ("Aluguel Pequeno",))
+
+    # 1 rosh padrão
     cursor.execute("INSERT INTO rosh (nome) VALUES (?)", ("Mix",))
 
-    # Usuários de teste (adm e normal)
-    senha_admin = generate_password_hash("admin123")
-    senha_user = generate_password_hash("Teste")
+    # Cria hashes de senha compatíveis com o login do app
+    senha_admin = generate_password_hash("admin123")  # senha do usuário admin
+    senha_user = generate_password_hash("Teste")      # senha do usuário comum
 
+    # Insere dois usuários:
+    # - "adm": admin=1 (tem acesso a /historico)
+    # - "Teste": admin=0 (usuário comum, sem acesso ao histórico total)
     cursor.executemany(
         "INSERT INTO user (nome, senha, admin) VALUES (?, ?, ?)",
         [
-            ("adm", senha_admin, 1),   # admin
+            ("adm", senha_admin, 1),   # usuário administrador
             ("Teste", senha_user, 0),  # usuário normal
         ],
     )
@@ -83,12 +108,20 @@ def app():
     conn.commit()
     conn.close()
 
+    # Entrega o app já configurado para o pytest usar
     yield flask_app
 
-    # Remove o arquivo de banco temporário ao final
+    # Após todos os testes que usam essa fixture terminarem,
+    # remove o arquivo de banco de dados temporário.
     os.unlink(temp_db.name)
 
 
 @pytest.fixture
 def client(app):
+    """
+    Fixture "client" que retorna o test_client() do Flask.
+
+    É o objeto utilizado para simular requisições HTTP às rotas do app,
+    como se fosse um navegador ou um frontend chamando a API.
+    """
     return app.test_client()
